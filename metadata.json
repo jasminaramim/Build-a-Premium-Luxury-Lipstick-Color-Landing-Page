@@ -1,0 +1,6 @@
+{
+  "name": "MAISON ÉLIXIR | Haute Rouge & Lipstick Atelier",
+  "description": "An immersive luxury beauty landing page for MAISON ÉLIXIR lipstick collection, featuring scroll-triggered cinematic video reveals, interactive shade matching, and custom engraving.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
