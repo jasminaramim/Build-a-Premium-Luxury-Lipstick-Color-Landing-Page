@@ -1,8 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Play, Pause, Volume2, VolumeX, Maximize2, Sparkles, Film, ArrowDown } from 'lucide-react';
-import { FadeUp } from './ScrollReveal';
+import { Play, Pause, Volume2, VolumeX, ArrowDown, Sparkles } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -17,7 +16,7 @@ export const HauteFilmShowcase: React.FC = () => {
   const [isPlayingManual, setIsPlayingManual] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
 
-  // Smooth lerp loop for bidirectional & reverse scroll scrubbing
+  // Smooth lerp loop for butter-smooth bidirectional scroll scrubbing (forward and reverse)
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -34,6 +33,7 @@ export const HauteFilmShowcase: React.FC = () => {
 
     const smoothVideoScrub = () => {
       if (!isPlayingManual && video.duration && !video.paused) {
+        // Paused during scroll scrub so mouse movement precisely controls the frames
         video.pause();
       }
 
@@ -42,7 +42,7 @@ export const HauteFilmShowcase: React.FC = () => {
         const target = targetTimeRef.current;
         const diff = target - current;
 
-        // Step smoothly forward or reverse
+        // Smooth step in forward or reverse direction
         if (!isSeekingRef.current && Math.abs(diff) > 0.005) {
           const step = diff * 0.22;
           const nextTime = Math.max(0, Math.min(video.duration - 0.02, current + step));
@@ -64,7 +64,7 @@ export const HauteFilmShowcase: React.FC = () => {
     };
   }, [isPlayingManual]);
 
-  // GSAP ScrollTrigger to pin section and smoothly scrub video forward & in reverse
+  // GSAP ScrollTrigger to pin full-screen and scrub video with mouse scroll (forward & reverse)
   useEffect(() => {
     const container = containerRef.current;
     const video = videoRef.current;
@@ -73,7 +73,7 @@ export const HauteFilmShowcase: React.FC = () => {
     const trigger = ScrollTrigger.create({
       trigger: container,
       start: 'top top',
-      end: '+=1600', // Comfortable scroll distance for reverse/forward scrubbing
+      end: '+=2000', // Comfortable scroll distance matching hero feel
       pin: true,
       scrub: 1.1,
       anticipatePin: 1,
@@ -82,7 +82,6 @@ export const HauteFilmShowcase: React.FC = () => {
         setScrollProgress(progress);
 
         if (video && video.duration && !isPlayingManual) {
-          // Bidirectional scrub time mapping
           targetTimeRef.current = progress * Math.max(0, video.duration - 0.05);
         }
       },
@@ -121,128 +120,108 @@ export const HauteFilmShowcase: React.FC = () => {
     setIsMuted(video.muted);
   };
 
-  const toggleFullscreen = () => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {});
-    } else if (video.requestFullscreen) {
-      video.requestFullscreen().catch(() => {});
-    }
-  };
+  // Text smoothly fades as you scroll down into the video and returns when scrolling up
+  const textOpacity = Math.max(0, 1 - scrollProgress * 2.8);
+  const textTranslateY = scrollProgress * -25;
 
   return (
     <section
       ref={containerRef}
-      className="relative w-full h-screen bg-[#0a0707] text-[#f7f2ea] overflow-hidden select-none flex flex-col justify-between py-12 md:py-16"
+      className="relative w-full h-screen bg-[#0c0908] text-[#f7f2ea] overflow-hidden select-none"
     >
-      {/* Subtle ambient lighting aura */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-[#d4af37]/10 rounded-full blur-[170px] pointer-events-none" />
+      {/* 1. Full-Screen Cinematic Video (videohero.mp4) Scrubbed by Mouse Scroll */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <video
+          ref={videoRef}
+          muted={isMuted}
+          playsInline
+          preload="auto"
+          onLoadedMetadata={handleVideoLoaded}
+          className="w-full h-full object-cover filter brightness-[1.0] contrast-[1.03] transition-transform duration-500 ease-out"
+          style={{
+            transform: `scale(${1.0 + scrollProgress * 0.04})`,
+          }}
+          poster="/src/assets/images/hero_model_lipstick_1793861222078.jpg"
+        >
+          <source src="/videohero.mp4" type="video/mp4" />
+          <source src="/videos/videohero.mp4" type="video/mp4" />
+        </video>
 
-      <div className="relative z-10 w-full max-w-6xl mx-auto px-6 lg:px-12 flex flex-col h-full justify-between">
-        {/* Top Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-[#2a201a] pb-6 gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-[#caa44b] font-medium mb-2">
-              <Film className="w-3.5 h-3.5 text-[#d4af37]" />
-              <span>Cinematic Haute Movement</span>
-            </div>
-            <h2 className="text-3xl sm:text-5xl font-serif font-light text-[#f7f2ea] tracking-tight">
-              The Sensory Motion & Liquid Pigment
-            </h2>
-          </div>
+        {/* Soft edge blend for seamless top/bottom transitions */}
+        <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#0c0908]/80 via-[#0c0908]/20 to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-[#0c0908] via-[#0c0908]/30 to-transparent pointer-events-none" />
+      </div>
 
-          {/* Interactive Scrub Tracker Pill */}
-          <div className="flex items-center gap-3 p-1.5 px-3 rounded-full bg-[#16100e]/80 border border-[#3b2d24] backdrop-blur-md self-start sm:self-auto">
-            <button
-              type="button"
-              onClick={togglePlay}
-              className="p-1 text-[#d4af37] hover:text-white transition-colors cursor-pointer"
-              title={isPlayingManual ? 'Pause' : 'Auto Reel'}
-            >
-              {isPlayingManual ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-            </button>
+      {/* 2. Minimal Discreet Controls (Top Right) */}
+      <div className="absolute top-20 right-6 sm:right-10 z-30 flex items-center gap-1.5 bg-[#120e0d]/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-[#3a2e26]/60 shadow-lg">
+        <button
+          type="button"
+          onClick={togglePlay}
+          aria-label={isPlayingManual ? "Pause video" : "Auto play video"}
+          className="p-1 text-[#d4af37] hover:text-white transition-colors cursor-pointer"
+          title={isPlayingManual ? "Pause continuous playback" : "Auto play reel"}
+        >
+          {isPlayingManual ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+        </button>
 
-            <button
-              type="button"
-              onClick={toggleMute}
-              className="p-1 text-[#c0b09f] hover:text-[#d4af37] transition-colors cursor-pointer"
-              title={isMuted ? 'Unmute' : 'Mute'}
-            >
-              {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5 text-[#d4af37]" />}
-            </button>
+        <button
+          type="button"
+          onClick={toggleMute}
+          aria-label={isMuted ? "Unmute sound" : "Mute sound"}
+          className="p-1 text-[#c8b7a6] hover:text-white transition-colors cursor-pointer"
+          title={isMuted ? "Unmute audio" : "Mute audio"}
+        >
+          {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5 text-[#d4af37]" />}
+        </button>
 
-            <div className="h-3 w-[1px] bg-[#3a2c22]" />
-
-            <div className="flex items-center gap-2 text-[11px] font-mono text-[#baa999]">
-              <span className="text-[#caa44b] font-bold">{Math.round(scrollProgress * 100)}%</span>
-              <span className="hidden sm:inline text-[#8a796a]">Scroll Reverse Scrub</span>
-            </div>
-          </div>
+        <div className="flex items-center gap-1.5 pl-2 border-l border-[#2f251f]/80 text-[10px] text-[#baa999] font-mono">
+          <span className="text-[#caa44b] font-bold">{Math.round(scrollProgress * 100)}%</span>
+          <span className="hidden sm:inline text-[#8a796a]">Reverse Scrub</span>
         </div>
+      </div>
 
-        {/* Center Stage: Cinema Box scrubbed forward and reverse */}
-        <div className="my-auto w-full max-w-5xl mx-auto">
-          <div className="relative aspect-[16/9] w-full rounded-3xl overflow-hidden border border-[#3d2e24] bg-[#0c0908] shadow-[0_30px_70px_rgba(0,0,0,0.95)] group">
-            <video
-              ref={videoRef}
-              muted={isMuted}
-              playsInline
-              preload="auto"
-              onLoadedMetadata={handleVideoLoaded}
-              className="w-full h-full object-cover filter brightness-[1.0] contrast-[1.03] transition-transform duration-300"
-              style={{
-                transform: `scale(${1.0 + scrollProgress * 0.04})`,
-              }}
-              poster="/src/assets/images/hero_model_lipstick_1793861222078.jpg"
-            >
-              <source src="/videohero.mp4" type="video/mp4" />
-              <source src="/videos/videohero.mp4" type="video/mp4" />
-            </video>
-
-            {/* Subtle Vignette */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/35 pointer-events-none" />
-
-            {/* Overlay Badges */}
-            <div className="absolute top-5 left-5 right-5 flex items-center justify-between text-xs pointer-events-none">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#120d0c]/85 backdrop-blur-md border border-[#3a2e25] text-[#d4af37] tracking-[0.2em] font-serif uppercase">
-                <Sparkles className="w-3 h-3 text-[#d4af37]" />
-                <span>Place Vendôme Campaign Film</span>
-              </div>
-
-              <div className="hidden sm:flex items-center gap-2 text-[10px] text-[#baa999] font-mono tracking-widest uppercase">
-                <span>Reverse Scrubbing Active</span>
-              </div>
-            </div>
-
-            {/* Bottom Bar inside Cinema Frame */}
-            <div className="absolute bottom-0 inset-x-0 p-5 flex items-center justify-between z-10 bg-gradient-to-t from-black/95 to-transparent">
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-[#a99988] font-light">
-                  {isPlayingManual ? 'Auto playback' : 'Scroll down to play forward · Scroll up to reverse'}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={toggleFullscreen}
-                className="p-2 rounded-full bg-[#1c1411]/85 hover:bg-[#2b1f1a] text-[#c0b09f] hover:text-[#d4af37] transition-colors cursor-pointer border border-[#3b2d24]"
-                title="Fullscreen"
-              >
-                <Maximize2 className="w-4 h-4" />
-              </button>
-            </div>
+      {/* 3. Minimal Content Overlay - Gracefully Dissolves as you Scroll Down */}
+      <div className="relative z-10 w-full h-full max-w-7xl mx-auto px-6 sm:px-12 flex flex-col justify-between pt-28 pb-8 pointer-events-none">
+        {/* Minimal Left Editorial Text */}
+        <div
+          className="my-auto max-w-sm sm:max-w-md flex flex-col items-start text-left transition-all duration-300 pointer-events-auto"
+          style={{
+            opacity: textOpacity,
+            transform: `translateY(${textTranslateY}px)`,
+          }}
+        >
+          <div className="flex items-center gap-2 text-[10px] tracking-[0.3em] uppercase text-[#d4af37] mb-2 font-medium">
+            <Sparkles className="w-3 h-3 text-[#d4af37]" />
+            <span>Place Vendôme Campaign Cinema</span>
           </div>
-        </div>
 
-        {/* Bottom Golden Progress Track */}
-        <div className="w-full flex items-center justify-between text-[11px] text-[#a18e7c] pt-4 border-t border-[#261d17]">
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] uppercase tracking-[0.22em] text-[#d4af37] font-mono">
-              Scrub Timeline
+          <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-serif font-light text-[#f7f2ea] tracking-tight leading-[1.08] mb-3 drop-shadow-md">
+            SENSORY MOTION. <br />
+            <span className="italic font-normal gold-gradient-text">
+              MOLTEN PIGMENT.
             </span>
-            <div className="w-32 sm:w-56 h-[2px] bg-[#221a15] rounded-full overflow-hidden">
+          </h2>
+
+          <p className="text-xs sm:text-sm text-[#d8cec2] font-light max-w-xs leading-relaxed mb-5 drop-shadow-md">
+            Scroll down to advance the couture film. Scroll up to reverse time.
+          </p>
+
+          <div className="flex items-center gap-2 text-[11px] font-mono text-[#caa44b] tracking-wider uppercase bg-[#140e0c]/80 px-3 py-1.5 rounded-full border border-[#3b2d24]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37] animate-pulse" />
+            <span>Mouse Scroll Scrub Active</span>
+          </div>
+        </div>
+
+        {/* Minimal Bottom Golden Progress Line */}
+        <div
+          className="w-full flex items-center justify-between text-[11px] text-[#a18e7c] transition-opacity duration-300"
+          style={{ opacity: Math.max(0.2, 1 - scrollProgress * 1.5) }}
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="text-[10px] uppercase tracking-[0.22em] text-[#d4af37] font-mono">
+              Haute Scrub Timeline
+            </span>
+            <div className="w-28 sm:w-48 h-[2px] bg-[#221a15] rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-[#dfba73] to-[#b88636] transition-all duration-100 ease-out"
                 style={{ width: `${Math.max(4, Math.round(scrollProgress * 100))}%` }}
@@ -250,9 +229,9 @@ export const HauteFilmShowcase: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-[#caa44b]">
-            <span className="text-[10px] uppercase tracking-[0.2em]">Scroll to reverse / scrub</span>
-            <ArrowDown className="w-3.5 h-3.5 animate-bounce text-[#d4af37]" />
+          <div className="flex items-center gap-1.5 text-[#caa44b] pointer-events-auto">
+            <span className="text-[10px] uppercase tracking-[0.2em]">Scroll to scrub / reverse</span>
+            <ArrowDown className="w-3 h-3 animate-bounce text-[#d4af37]" />
           </div>
         </div>
       </div>

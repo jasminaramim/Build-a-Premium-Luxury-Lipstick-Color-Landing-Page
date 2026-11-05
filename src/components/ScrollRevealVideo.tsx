@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Sparkles, Sliders, Play, Pause, ChevronRight } from 'lucide-react';
+import { Sparkles, ChevronRight, ArrowDown } from 'lucide-react';
+import { FadeUp } from './ScrollReveal';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -58,24 +59,22 @@ const STORY_STAGES = [
 
 export const ScrollRevealVideo: React.FC<ScrollRevealVideoProps> = ({ onSelectShadeById }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const lipstickRef = useRef<HTMLDivElement>(null);
   const [activeStageIndex, setActiveStageIndex] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [isPlayingManual, setIsPlayingManual] = useState(false);
 
   const currentStage = STORY_STAGES[activeStageIndex];
 
   useEffect(() => {
     const container = containerRef.current;
-    const video = videoRef.current;
     if (!container) return;
 
-    // Create GSAP ScrollTrigger for smooth scroll-driven video & lipstick story reveal
+    // Create GSAP ScrollTrigger for smooth scroll-driven storytelling lipstick slider
     const trigger = ScrollTrigger.create({
       trigger: container,
       start: 'top top',
-      end: '+=2500', // Scroll distance for thorough storytelling experience
+      end: '+=2400', // Comfortable scroll distance
       pin: true,
       scrub: 1.2,
       anticipatePin: 1,
@@ -88,122 +87,99 @@ export const ScrollRevealVideo: React.FC<ScrollRevealVideoProps> = ({ onSelectSh
           STORY_STAGES.length - 1,
           Math.floor(progress * STORY_STAGES.length)
         );
+
         setActiveStageIndex((prev) => {
-          if (prev !== stageIndex && contentRef.current) {
-            gsap.fromTo(
-              contentRef.current,
-              { opacity: 0.35, y: 18, filter: 'blur(5px)' },
-              { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.55, ease: 'power2.out' }
-            );
+          if (prev !== stageIndex) {
+            // Smooth slow luxury micro-transition on content when stage changes
+            if (contentRef.current) {
+              gsap.fromTo(
+                contentRef.current,
+                { opacity: 0.3, y: 22, filter: 'blur(6px)' },
+                { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.65, ease: 'power2.out' }
+              );
+            }
+            if (lipstickRef.current) {
+              gsap.fromTo(
+                lipstickRef.current,
+                { scale: 0.96, rotate: -2 },
+                { scale: 1, rotate: 0, duration: 0.7, ease: 'power2.out' }
+              );
+            }
           }
           return stageIndex;
         });
-
-        // Scrub video playback time if video is ready and not manually playing
-        if (video && video.duration && !isPlayingManual) {
-          const targetTime = progress * video.duration;
-          if (Number.isFinite(targetTime)) {
-            video.currentTime = targetTime;
-          }
-        }
       },
     });
 
     return () => {
       trigger.kill();
     };
-  }, [isPlayingManual]);
+  }, []);
 
-  const toggleManualPlayback = () => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    if (isPlayingManual) {
-      video.pause();
-      setIsPlayingManual(false);
-    } else {
-      video.play();
-      setIsPlayingManual(true);
-    }
+  const jumpToStage = (index: number) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const scrollTarget = container.offsetTop + (index / STORY_STAGES.length) * 2400;
+    window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
   };
 
   return (
     <section
       id="cinematic"
       ref={containerRef}
-      className="relative w-full h-screen bg-[#0c0908] text-[#f7f2ea] overflow-hidden select-none"
+      className="relative w-full h-screen bg-[#0c0908] text-[#f7f2ea] overflow-hidden select-none border-t border-[#1e1713]"
     >
-      {/* Background Video Layer scrubbed by ScrollTrigger */}
-      <div className="absolute inset-0 z-0">
-        <video
-          ref={videoRef}
-          muted
-          playsInline
-          preload="auto"
-          poster="/src/assets/images/lipstick_bold_category_1793861224749.jpg"
-        >
-          {/* Authentic slow motion cosmetic lipstick texture & application video */}
-          <source src="/videos/hero_fashion_motion.webm" type="video/webm" />
-          <source
-            src="https://upload.wikimedia.org/wikipedia/commons/2/2e/%28Fashion_film%29_THYREN_2018_SPIRNG_-_SUMMER_COLLECTION_Fashion_Ad_Film_%28feat.Julia_Ratner%29.webm"
-            type="video/webm"
-          />
-        </video>
-
-        {/* Ambient Color Aura morphing with current lipstick shade */}
+      {/* Clean Luxury Dark Background with Dynamic Shade Color Aura (NO background images on the left) */}
+      <div className="absolute inset-0 z-0 bg-[#0c0908] overflow-hidden pointer-events-none">
+        {/* Soft Radial Shade Glow concentrated on the right side behind the lipstick */}
         <div
-          className="absolute inset-0 opacity-40 mix-blend-color transition-colors duration-1000 ease-out pointer-events-none"
+          className="absolute -right-20 top-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full blur-[160px] opacity-35 transition-colors duration-1000 ease-out"
           style={{ backgroundColor: currentStage.hex }}
         />
-
-        {/* Gradient Scrims for immaculate text legibility */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0c0908]/90 via-[#0c0908]/60 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0c0908] via-transparent to-[#0c0908]/80" />
+        <div className="absolute inset-0 bg-radial from-transparent via-[#0c0908]/50 to-[#0c0908]" />
       </div>
 
       {/* Main Split Grid Viewport */}
-      <div className="relative z-10 w-full h-full max-w-7xl mx-auto px-6 lg:px-12 flex flex-col justify-between py-12 md:py-20">
-        {/* Top Header Bar inside the cinematic reveal */}
-        <div className="flex items-center justify-between border-b border-[#352c26]/60 pb-4">
-          <div className="flex items-center gap-3">
-            <span className="text-[11px] tracking-[0.3em] uppercase text-[#d4af37] font-medium">
-              Chapter {currentStage.step} of 04
-            </span>
-            <span className="text-[#645244]">·</span>
-            <span className="text-xs text-[#a39282] uppercase tracking-[0.2em]">
-              The Haute Film & Formulation
-            </span>
-          </div>
+      <div className="relative z-10 w-full h-full max-w-7xl mx-auto px-6 lg:px-12 flex flex-col justify-between py-12 md:py-16">
+        {/* Top Header Bar with Smooth FadeUp */}
+        <FadeUp delay={0}>
+          <div className="flex items-center justify-between border-b border-[#352c26]/60 pb-4">
+            <div className="flex items-center gap-3">
+              <span className="text-[11px] tracking-[0.3em] uppercase text-[#d4af37] font-medium font-mono">
+                Chapter {currentStage.step} of 04
+              </span>
+              <span className="text-[#645244]">·</span>
+              <span className="text-xs text-[#a39282] uppercase tracking-[0.2em]">
+                The Haute Pigment & Formulation Slider
+              </span>
+            </div>
 
-          {/* Video Scrub / Play Mode Indicator */}
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={toggleManualPlayback}
-              className="text-xs uppercase tracking-[0.15em] text-[#d4af37] hover:text-[#fff] flex items-center gap-1.5 transition-colors"
-            >
-              {isPlayingManual ? (
-                <>
-                  <Pause className="w-3.5 h-3.5" />
-                  <span>Pause Motion</span>
-                </>
-              ) : (
-                <>
-                  <Play className="w-3.5 h-3.5" />
-                  <span>Auto Reel</span>
-                </>
-              )}
-            </button>
-            <div className="hidden sm:flex items-center gap-2 text-[11px] text-[#8c7b6d] font-mono">
-              <span>Scroll to Scrub</span>
-              <span className="text-[#caa44b] font-bold">{Math.round(scrollProgress * 100)}%</span>
+            {/* Stage Selector Pills */}
+            <div className="flex items-center gap-2">
+              {STORY_STAGES.map((s, idx) => {
+                const isActive = idx === activeStageIndex;
+                return (
+                  <button
+                    key={s.step}
+                    type="button"
+                    onClick={() => jumpToStage(idx)}
+                    className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-mono transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-[#d4af37] text-black font-bold shadow-md'
+                        : 'text-[#8c7b6d] hover:text-white bg-[#140f0e] border border-[#2b211a]'
+                    }`}
+                  >
+                    {s.step}
+                  </button>
+                );
+              })}
             </div>
           </div>
-        </div>
+        </FadeUp>
 
-        {/* Center Stage: Kinetic Typography & Interactive Product Showcase */}
+        {/* Center Stage: Left Clean Kinetic Typography & Right Lipstick Visual Slider */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center my-auto">
-          {/* Left Column: Kinetic Typography & Haute Storytelling */}
+          {/* Left Column: Pure Clean Haute Storytelling (NO background images) */}
           <div ref={contentRef} className="lg:col-span-7 flex flex-col justify-center">
             {/* Tagline */}
             <div className="inline-flex items-center gap-2 text-xs tracking-[0.3em] uppercase font-semibold text-[#caa44b] mb-3">
@@ -212,17 +188,17 @@ export const ScrollRevealVideo: React.FC<ScrollRevealVideoProps> = ({ onSelectSh
             </div>
 
             {/* Kinetic Title */}
-            <h2 className="text-5xl sm:text-7xl lg:text-8xl font-serif font-light tracking-tight leading-[0.95] text-[#f7f2ea] mb-6">
+            <h2 className="text-4xl sm:text-6xl lg:text-7xl font-serif font-light tracking-tight leading-[0.98] text-[#f7f2ea] mb-5">
               {currentStage.title}
             </h2>
 
             {/* Editorial Description */}
-            <p className="text-base sm:text-lg text-[#c8baa9] font-light leading-relaxed max-w-xl mb-6">
+            <p className="text-sm sm:text-base text-[#c8baa9] font-light leading-relaxed max-w-xl mb-6">
               {currentStage.description}
             </p>
 
-            {/* Sensory Lubricant Glide & Gloss Technology Box (লুব্রিকেন্ট ইফেক্ট) */}
-            <div className="p-4 rounded-xl bg-[#181311]/85 border border-[#3c3026] backdrop-blur-md max-w-xl mb-8">
+            {/* Sensory Lubricant Glide Box */}
+            <div className="p-4 rounded-xl bg-[#140e0c]/85 border border-[#30251d] backdrop-blur-md max-w-xl mb-7 shadow-lg">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#dfba73] mb-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-[#d4af37]" />
                 <span>Sensory Lubricant Slip & Gloss Matrix</span>
@@ -237,13 +213,13 @@ export const ScrollRevealVideo: React.FC<ScrollRevealVideoProps> = ({ onSelectSh
               <button
                 type="button"
                 onClick={() => onSelectShadeById(currentStage.shadeId)}
-                className="px-6 py-3 bg-gradient-to-r from-[#dfba73] to-[#b88636] text-[#0c0908] text-xs uppercase tracking-[0.2em] font-semibold rounded-sm hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 shadow-lg"
+                className="px-6 py-3 bg-gradient-to-r from-[#dfba73] to-[#b88636] text-[#0c0908] text-xs uppercase tracking-[0.2em] font-semibold rounded-sm hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 shadow-lg cursor-pointer"
               >
                 <span>Select {currentStage.shadeName}</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
 
-              <div className="flex items-center gap-3 px-4 py-2.5 rounded-sm bg-[#130f0e]/80 border border-[#342922] text-xs text-[#b8a99a]">
+              <div className="flex items-center gap-3 px-4 py-2.5 rounded-sm bg-[#130f0e]/90 border border-[#342922] text-xs text-[#b8a99a]">
                 <span className="font-mono text-[#caa44b]">{currentStage.hex}</span>
                 <span>·</span>
                 <span className="capitalize">{currentStage.finish}</span>
@@ -251,8 +227,8 @@ export const ScrollRevealVideo: React.FC<ScrollRevealVideoProps> = ({ onSelectSh
             </div>
           </div>
 
-          {/* Right Column: Dynamic Architectural Lipstick Tube Rendering with Gloss Reflection */}
-          <div className="lg:col-span-5 flex flex-col items-center justify-center relative">
+          {/* Right Column: Architectural 3D Lipstick Tube Rendering with Gloss Reflection */}
+          <div ref={lipstickRef} className="lg:col-span-5 flex flex-col items-center justify-center relative">
             <div className="relative w-64 h-80 sm:w-72 sm:h-96 flex items-center justify-center">
               {/* Radial Glow matching the shade color */}
               <div
@@ -291,117 +267,91 @@ export const ScrollRevealVideo: React.FC<ScrollRevealVideoProps> = ({ onSelectSh
 
                 {/* Matte Black & Fluted Gold Tube */}
                 <rect x="65" y="210" width="110" height="150" rx="3" fill="#141110" stroke="#3d3229" strokeWidth="1" />
-                <rect x="62" y="190" width="116" height="24" rx="2" fill="url(#scrolledGold)" />
+                
+                {/* Fluted Vertical Ridges on Case */}
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <line
+                    key={i}
+                    x1={75 + i * 11}
+                    y1={210}
+                    x2={75 + i * 11}
+                    y2={360}
+                    stroke="rgba(212,175,55,0.22)"
+                    strokeWidth="1.5"
+                  />
+                ))}
 
-                {/* Engraved Atelier Text */}
-                <text
-                  x="120"
-                  y="205"
-                  textAnchor="middle"
-                  fill="#3d2a09"
-                  fontSize="7.5"
-                  fontWeight="700"
-                  letterSpacing="2"
-                  fontFamily="serif"
-                >
+                {/* Heavy Gold Center Band */}
+                <rect x="65" y="195" width="110" height="15" fill="url(#scrolledGold)" />
+                <rect x="65" y="193" width="110" height="2" fill="#fff" opacity="0.4" />
+
+                {/* Monogram Stamp on Band */}
+                <text x="120" y="206" fill="#181310" fontSize="7" fontFamily="serif" textAnchor="middle" letterSpacing="2">
                   MAISON ÉLIXIR
                 </text>
 
-                {/* Inner Gold Collar */}
-                <rect x="75" y="110" width="90" height="80" rx="2" fill="url(#scrolledGold)" />
-                <line x1="88" y1="110" x2="88" y2="190" stroke="#876627" strokeWidth="1" opacity="0.6" />
-                <line x1="120" y1="110" x2="120" y2="190" stroke="#fff3cf" strokeWidth="1" opacity="0.8" />
-                <line x1="152" y1="110" x2="152" y2="190" stroke="#876627" strokeWidth="1" opacity="0.6" />
+                {/* Gold Inner Neck */}
+                <rect x="75" y="150" width="90" height="45" fill="url(#scrolledGold)" />
 
-                {/* Morphing Lipstick Bullet with active Stage Color */}
-                <g className="transition-colors duration-700">
-                  {/* Bullet Silhouette */}
+                {/* Exposed Lipstick Bullet - Color changes with active scroll stage */}
+                <g className="transition-all duration-700 ease-out">
+                  {/* The sculpted bullet body */}
                   <path
-                    d="M 84,110 L 84,60 Q 84,35 120,22 Q 156,35 156,60 L 156,110 Z"
+                    d="M 80,150 L 80,75 C 80,45 105,25 120,25 C 135,25 160,45 160,75 L 160,150 Z"
                     fill={currentStage.hex}
                   />
 
-                  {/* Beveled Ergonomic Teardrop Face */}
+                  {/* Ergonomic teardrop angle slice */}
                   <path
-                    d="M 84,60 C 84,40 102,26 120,20 C 138,26 156,40 156,60 C 156,76 132,94 120,94 C 108,94 84,76 84,60 Z"
-                    fill={currentStage.hex}
-                    filter="brightness(1.15)"
+                    d="M 80,85 C 85,45 110,25 120,25 C 135,25 155,50 160,70 L 80,120 Z"
+                    fill="#ffffff"
+                    opacity="0.18"
                   />
 
-                  {/* Surface Shading */}
+                  {/* Dimensional shading overlay */}
                   <path
-                    d="M 84,110 L 84,60 Q 84,35 120,22 Q 156,35 156,60 L 156,110 Z"
+                    d="M 80,150 L 80,75 C 80,45 105,25 120,25 C 135,25 160,45 160,75 L 160,150 Z"
                     fill="url(#scrolledShadeGrad)"
                   />
 
-                  {/* Specular Lubricant Glide Sheen Streak */}
+                  {/* Specular Liquid Gloss Highlight Slanted Ribbon */}
                   <path
-                    d="M 100,50 Q 103,78 102,109"
-                    stroke="#ffffff"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    opacity="0.75"
-                    filter="blur(0.5px)"
+                    d="M 100,140 L 115,50 C 117,40 123,40 125,50 L 140,140 Z"
+                    fill="url(#liquidLubricantReflect)"
+                    filter="blur(1.5px)"
                   />
-
-                  {/* Wet Lip Gloss Droplet Refraction */}
-                  <circle cx="126" cy="38" r="2.2" fill="#ffffff" opacity="0.85" />
-                  <circle cx="118" cy="65" r="1.5" fill="#ffffff" opacity="0.8" />
-
-                  {/* Monogram Seal */}
-                  <text
-                    x="120"
-                    y="62"
-                    textAnchor="middle"
-                    fill="rgba(255,255,255,0.25)"
-                    fontSize="10"
-                    fontWeight="600"
-                    fontFamily="serif"
-                  >
-                    ÉLIXIR
-                  </text>
                 </g>
               </svg>
-            </div>
 
-            {/* Micro Shade Swatch Selector */}
-            <div className="flex items-center gap-3 mt-4">
-              {STORY_STAGES.map((s, idx) => (
-                <button
-                  key={s.step}
-                  type="button"
-                  onClick={() => setActiveStageIndex(idx)}
-                  className={`w-4 h-4 rounded-full transition-all duration-300 ${
-                    idx === activeStageIndex
-                      ? 'scale-125 ring-2 ring-[#d4af37] ring-offset-2 ring-offset-[#0c0908]'
-                      : 'opacity-50 hover:opacity-100'
-                  }`}
-                  style={{ backgroundColor: s.hex }}
-                  title={`${s.step}. ${s.shadeName}`}
+              {/* Floating Monogram Badge on right */}
+              <div className="absolute -bottom-2 right-2 px-3 py-1.5 rounded-full bg-[#16110f]/90 border border-[#3a2e26] text-[10px] text-[#caa44b] font-mono tracking-widest backdrop-blur-md shadow-lg">
+                <span>{currentStage.finish}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Scroll Indicator Bar with Smooth FadeUp */}
+        <FadeUp delay={0.1}>
+          <div className="w-full flex items-center justify-between text-xs text-[#8c7b6d] border-t border-[#2d241e]/60 pt-4">
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] uppercase tracking-[0.25em] text-[#d4af37] font-mono">
+                Formula Slide Progress
+              </span>
+              <div className="w-32 sm:w-48 h-[2px] bg-[#221a15] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-[#dfba73] to-[#b88636] transition-all duration-100 ease-out"
+                  style={{ width: `${Math.max(5, Math.round(scrollProgress * 100))}%` }}
                 />
-              ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-[#caa44b]">
+              <span className="text-[10px] uppercase tracking-[0.2em]">Scroll to change formulation</span>
+              <ArrowDown className="w-3.5 h-3.5 animate-bounce text-[#d4af37]" />
             </div>
           </div>
-        </div>
-
-        {/* Bottom Progress Tracker & Scroll Hint */}
-        <div className="border-t border-[#2e2621]/80 pt-4 flex items-center justify-between">
-          {/* Multi-step progress bar */}
-          <div className="flex items-center gap-2 w-full max-w-md">
-            {STORY_STAGES.map((s, i) => (
-              <div
-                key={s.step}
-                className={`h-1 flex-1 rounded-full transition-all duration-500 ${
-                  i <= activeStageIndex ? 'bg-[#d4af37]' : 'bg-[#2a221d]'
-                }`}
-              />
-            ))}
-          </div>
-
-          <div className="text-[11px] uppercase tracking-[0.2em] text-[#918171] font-mono">
-            Scroll to reveal next formula
-          </div>
-        </div>
+        </FadeUp>
       </div>
     </section>
   );
